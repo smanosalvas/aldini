@@ -1,36 +1,94 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, Pressable, StyleSheet, FlatList } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, FlatList } from 'react-native';
 
 import Http from '../../libs/http';
+import FoodMenuItem from './FoodMenuItem';
+import colors from 'aldini/src/res/colors';
+import FoodPromos from '../promos/FoodPromos';
+import FoodSearch from './FoodSearch';
 
 const FoodScreen = ({ navigation }) => {
-    const [blogs, setBlogs] = useState([]);
+    const [foodMenu, setFoodMenu] = useState([]);
+    const [allFoodMenu, setAllFoodMenu] = useState([]);
+    const [promosMenu, setPromosMenu] = useState([]);
+    const [loading, setLoading] = useState(false)
+    const [loadingPromos, setLoadingPromos] = useState(false)
 
     useEffect(()=> {
         const getData = async () => {
-            const getBlogs = await Http.instance.get();
-            console.log("Blogs",getBlogs)
-            setBlogs(getBlogs.data);
+            setLoading(true);
+            const getFoodMenu = await Http.instance.get('food');
+            setFoodMenu(getFoodMenu.data);
+            setAllFoodMenu(getFoodMenu.data)
+            setLoading(false);
         }
 
         getData();
+
+        const getPromos = async () => {
+            setLoadingPromos(true);
+            const getPromosMemu = await Http.instance.get('promos');
+            setPromosMenu(getPromosMemu.data);
+            setLoadingPromos(false);
+        }
+
+        getPromos();
     }, []) 
 
-    const handlePress = () => {
-        navigation.navigate('FoodDetail')
+    const handlePress = (menuItem) => {
+        console.log("detail food menu" , menuItem);
+        const scoreDetail= Array(5).fill(false);
+        for (let index = 0; index < menuItem.score; index++) {
+            scoreDetail[index] = true;
+        }
+
+        navigation.navigate('FoodDetail', { menuItem , scoreDetail});
+    }
+
+    const handleSearch = (query)=> {
+        if(query === ""){
+            setFoodMenu(allFoodMenu);
+        } else {
+            const foodFiltered = allFoodMenu.filter((foodItem)=>{
+                return foodItem.name.toLowerCase().includes(query.toLowerCase()) || 
+                foodItem.description.toLowerCase().includes(query.toLowerCase());
+            });
+            setFoodMenu(foodFiltered);
+        }
     }
 
     return (
         <View style={styles.container}>
-            <Text> Food Screen </Text>
+            <FoodSearch onChange={handleSearch} /> 
+
+            {
+                loadingPromos ?
+                    <ActivityIndicator color="#000" size="large" style={styles.loader} />
+                : null
+            }
             <FlatList 
-                data={blogs}
+                data={promosMenu}
+                horizontal={true}
                 keyExtractor={ (item) => item.id}
-                renderItem={({ item }) => <Text> { item.name }</Text>}
+                renderItem={({ item }) => 
+                    <FoodPromos item={item} />
+                }
+                style={styles.promosContainer}
             />
-            <Pressable style={styles.btn} onPress={handlePress} >
-                <Text style={styles.btnText}>Ir a detail</Text>
-            </Pressable>
+
+            {
+                loading ?
+                    <ActivityIndicator color="#000" size="large" style={styles.loader} />
+                : null
+            }
+            <FlatList 
+                data={foodMenu}
+                keyExtractor={ (item) => item.id}
+                renderItem={({ item }) => 
+                <FoodMenuItem item={item} onPress={() => handlePress(item)}
+             />
+            }
+            />
         </View>
     )
     
@@ -39,7 +97,7 @@ const FoodScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff"
+        backgroundColor: colors.charade
     },
     btn: {
         padding: 8,
@@ -49,6 +107,12 @@ const styles = StyleSheet.create({
     },
     btnText: {
         color: "#fff"
+    },
+    loader: {
+        marginTop: 60
+    },
+    promosContainer: {
+        height: 200
     }
 })
 
