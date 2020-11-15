@@ -11,8 +11,8 @@ import { NavigationContainer } from '@react-navigation/native'
 import FoodStack from 'aldini/src/components/menu/FoodStack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Image } from 'react-native';
-import colors from './src/res/colors';
-import FavoritesStack from './src/components/favorites/FavoritesStack';
+import colors from 'aldini/src/res/colors';
+import FavoritesStack from 'aldini/src/components/favorites/FavoritesStack';
 
 const Tabs = createBottomTabNavigator();
 

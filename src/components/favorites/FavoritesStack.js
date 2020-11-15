@@ -18,7 +18,7 @@ const FavoritesStack = () => {
             }
         }>
             <Stack.Screen 
-                name="Favorites" 
+                name="Favoritos" 
                 component={FavoritesScreen}
             />
         </Stack.Navigator>

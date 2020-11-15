@@ -1,10 +1,70 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable, Alert } from 'react-native';
+import Storage from '../../libs/storeage';
 import colors from '../../res/colors';
 
 const FoodDetailScreen = ({ route }) => {
-    const { image, name, description } = route.params.menuItem;
+    const { image, name, description, id } = route.params.menuItem;
     const { scoreDetail } = route.params;
+    const [ isFavorite, setIsFavorite] = useState(false);
+    const storage = Storage.instance;
+
+    useEffect(()=> {
+        getFavorite();
+    });
+
+    const toggleFavorite = () => {
+        if(isFavorite){
+            removeFavorite();
+        } else {
+            addFavorite();
+        }
+    }
+
+    const addFavorite = async () => {
+        const menuFoodItem = JSON.stringify(route.params.menuItem);
+        const key = `favorite-${id}`
+
+        const stored = await storage.store(key, menuFoodItem);
+        setIsFavorite(stored);
+    }
+    const removeFavorite = async () => {
+        Alert.alert("Eliminar Favorito" , "¿Està seguro de eliminar favorito?", 
+        [
+            {
+                text: "cancel",
+                onPress: ()=>{},
+                style: "cancel"
+            },
+            {
+                text: "Eliminar",
+                onPress: async ()=>{
+                    const key = `favorite-${id}`
+                    const stored =  await storage.remove(key);
+                    setIsFavorite(!stored);
+                },
+                style: "destructive"
+            }
+        ])
+        
+    }
+
+    const getFavorite = async ()=> {
+        try {
+            const key = `favorite-${id}`;
+            const favorite = await storage.get(key);
+            console.log("Detalle : ", favorite);
+            if(favorite){
+                const jsonFavorite = JSON.parse(favorite);
+                setIsFavorite(jsonFavorite.id === id)
+            } else {
+                setIsFavorite(false);
+            }
+        } catch (error) {
+            console.error(error)
+            setIsFavorite(false);
+        }
+    }
 
     return (
         <View style={styles.container}>
@@ -14,7 +74,19 @@ const FoodDetailScreen = ({ route }) => {
                 uri: image
             }}/>
             <View style={styles.detail} >
-                <Text style={styles.title}>{name}</Text>
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>{name}</Text>
+                    <Pressable 
+                        onPress={toggleFavorite}
+                        style={[
+                            styles.btnFavorite,
+                            isFavorite ? 
+                            styles.btnFavoriteRemove : 
+                            styles.btnFavoriteAdd
+                        ]}>
+                        <Text style={styles.btnFavoriteText}>{isFavorite ? "Quitar favorito" :  "Agregar a favoritos"}</Text>
+                    </Pressable>
+                </View>
                 <View style={styles.scoreContainer}>
                     {
                         scoreDetail.map((scoreValue) => {
@@ -55,6 +127,10 @@ const styles = StyleSheet.create({
         textAlign: "center",
         height: 40
     },
+    titleContainer:{
+        flexDirection: "row",
+        justifyContent: "space-between"
+    },
     description: {
         color: colors.zircon,
         fontSize: 14
@@ -73,7 +149,21 @@ const styles = StyleSheet.create({
         height: 22,
         tintColor: "gray",
         marginRight: 5
-    }
+    },
+    btnFavorite: {
+        padding: 8,
+        borderRadius: 8
+    },
+    btnFavoriteAdd: {
+        backgroundColor: colors.picton
+    },
+    btnFavoriteRemove: {
+        backgroundColor: colors.carmine
+    },
+    btnFavoriteText: {
+        color: colors.white
+    },
+    
 });
 
 export default FoodDetailScreen;
